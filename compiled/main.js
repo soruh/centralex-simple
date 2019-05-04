@@ -322,7 +322,7 @@ function timeLeft(timeout) {
     let remaining = timeout["_idleTimeout"] + timeout["_idleStart"] - Math.floor(process.uptime() * 1000);
     if (remaining < 0)
         remaining = 0;
-    return (remaining / 1000).toPrecision(PORT_TIMEOUT.toString().length);
+    return (remaining / 1000).toFixed(3);
 }
 function getStateProblems() {
     let openPorts = itelexServer.listPorts();
