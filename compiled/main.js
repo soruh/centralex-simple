@@ -196,7 +196,9 @@ class Client {
         try {
             if (end) {
                 this.socket.write(buffer);
-                this.socket.end();
+                setTimeout(() => {
+                    this.socket.end();
+                }, 5 * 1000);
             }
             else {
                 this.socket.write(buffer);

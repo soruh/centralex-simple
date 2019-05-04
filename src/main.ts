@@ -285,9 +285,9 @@ class Client {
         try {
             if (end) {
                 this.socket.write(buffer);
-                setImmediate(() => {
+                setTimeout(() => {
                     this.socket.end();
-                });
+                }, 5 * 1000);
             } else {
                 this.socket.write(buffer);
             }
