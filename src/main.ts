@@ -88,7 +88,7 @@ class Client {
     }
 
     close() {
-        this.socket.end();
+        this.socket.destroy();
 
         // let destroy = () => {
         //     destroy = () => { };
@@ -128,7 +128,7 @@ class Client {
     }
 
     restartTimeout() {
-        // // console.log("restarted timeout for client %s", this.id);
+        console.log("restarted timeout for client %s", this.id);
         clearTimeout(this.timeout);
         this.timeout = setTimeout(() => {
             console.log("client %s timed out", this.id);
@@ -137,11 +137,15 @@ class Client {
     }
 
     onTimeout() {
+        console.log("client " + this.id + " timed out");
         this.clearAllTimeouts();
-        this.close();
+        clearInterval(this.ping);
+
         if (this.peer) {
             this.peer.send_reject('na');
         }
+
+        this.close();
     }
 
     clearAllTimeouts() {
@@ -162,7 +166,7 @@ class Client {
             port = await itelexServer.addFreePort() as Port;
         }
         if (!port) {
-            this.socket.end();
+            this.socket.destroy();
             console.log('\x1b[31mfailed to open free port\x1b[0m');
             return;
         }

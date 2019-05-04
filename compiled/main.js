@@ -84,6 +84,7 @@ class Client {
         }, TIMEOUT_DELAY);
     }
     onTimeout() {
+        console.log("client " + this.id + " timed out");
         this.clearAllTimeouts();
         this.close();
         if (this.peer) {
