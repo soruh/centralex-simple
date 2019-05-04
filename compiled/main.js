@@ -415,7 +415,7 @@ function getStateProblems() {
 }
 const debugServer = new net_1.Server(socket => {
     let message = "[start of debug information]";
-    message += "\n\n=> port-number mapping:\n";
+    message += "\n=> port-number mapping:\n";
     message += Array.from(ports).sort((a, b) => a[1] - b[1]).map(x => `  - ${(x[0] + '').padStart(10)} on port: ${x[1]}`).join('\n');
     message += "\n\n=> connected clients:\n";
     // message += Array.from(clients).map(x => `  - ${(x[0] + '').padStart(10)} is a ${x[1].centralexEnabled ? 'centralex client' : 'caller'}`).join('\n');
@@ -434,7 +434,7 @@ const debugServer = new net_1.Server(socket => {
     // message += `\n  - PORT_TIMEOUT: ${PORT_TIMEOUT}`;
     message += "\n\n=> problems:\n";
     message += getStateProblems().map(x => '  - ' + x).join("\n");
-    message += "\n\n[end of debug information]\n";
+    message += "\n[end of debug information]\n";
     socket.end(message);
 });
 debugServer.listen(4885, () => {

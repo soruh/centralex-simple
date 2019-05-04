@@ -557,7 +557,7 @@ function getStateProblems(): string[] {
 const debugServer = new Server(socket => {
     let message = "[start of debug information]";
 
-    message += "\n\n=> port-number mapping:\n";
+    message += "\n=> port-number mapping:\n";
     message += Array.from(ports).sort((a, b) => a[1] - b[1]).map(x => `  - ${(x[0] + '').padStart(10)} on port: ${x[1]}`).join('\n');
 
     message += "\n\n=> connected clients:\n";
@@ -584,7 +584,7 @@ const debugServer = new Server(socket => {
     message += "\n\n=> problems:\n";
     message += getStateProblems().map(x => '  - ' + x).join("\n");
 
-    message += "\n\n[end of debug information]\n"
+    message += "\n[end of debug information]\n"
 
     socket.end(message);
 });
