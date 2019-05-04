@@ -25,6 +25,7 @@ class NominalType {
 let clients = new Map();
 let ports = new Map();
 let portTimeouts = new Map();
+let savedRejectCodes = new Map();
 // const debug = require('util').debuglog('centralex');
 function makePackageSkeleton(type, length = 0) {
     let buffer = Buffer.alloc(length + 2);
@@ -35,6 +36,7 @@ function makePackageSkeleton(type, length = 0) {
 class Client {
     constructor(socket, centralex) {
         this.callbacks = {};
+        this.number = null;
         this.centralexEnabled = false;
         this.socket = socket;
         this._id = require('crypto').randomBytes(3).toString('base64');
@@ -88,7 +90,7 @@ class Client {
         this.clearAllTimeouts();
         clearInterval(this.ping);
         if (this.peer) {
-            this.peer.send_reject('na');
+            this.peer.send_reject('der');
         }
         this.close();
     }
@@ -99,6 +101,7 @@ class Client {
     async onConnect(number, pin) {
         clearTimeout(this.authTimeout);
         let port = ports.get(number);
+        savedRejectCodes.delete(port);
         if (port) {
             clearTimeout(portTimeouts.get(port));
             portTimeouts.delete(port);
@@ -119,7 +122,9 @@ class Client {
             clients.delete(port);
             clearTimeout(portTimeouts.get(port));
             portTimeouts.set(port, setTimeout(() => {
-                ports.delete(ports.findIndex((value, key) => value == port));
+                savedRejectCodes.delete(port);
+                const number = ports.findIndex(value => value === port);
+                ports.delete(number);
                 itelexServer.removePorts(port);
                 portTimeouts.delete(port);
             }, PORT_TIMEOUT));
@@ -128,6 +133,7 @@ class Client {
             await ITelexServerCom_1.dynIpUpdate(number, pin, port);
             this.authenticated = true;
             const oldId = this.id;
+            this.number = number;
             this._id = number.toString();
             this.idColor = '\x1b[33m';
             const newId = this.id;
@@ -254,7 +260,7 @@ const itelexServer = new multiPortServer_1.default(async (socket, port) => {
     });
     if (!clients.has(port)) {
         // client is not connected
-        caller.send_reject('na');
+        caller.send_reject(savedRejectCodes.get(port) || 'nc');
         return;
     }
     caller.authenticated = true;
@@ -263,7 +269,7 @@ const itelexServer = new multiPortServer_1.default(async (socket, port) => {
     let called = clients.get(port);
     if (!called.available) {
         // if a client is not available
-        let errorMessage = 'na';
+        let errorMessage = 'nc';
         if (!called.authenticated) {
             errorMessage = 'na';
         }
@@ -310,6 +316,14 @@ const centralexServer = new net_1.Server(socket => {
                 client.close();
                 break;
             case PKG_REJECT:
+                if (client.authenticated) {
+                    const port = ports.get(client.number);
+                    if (port) {
+                        const code = content.readNullTermString();
+                        console.log("saving reject message '%s' for port %d", code, port);
+                        savedRejectCodes.set(port, code);
+                    }
+                }
                 client.close();
                 // console.log('client reject:', content.readNullTermString());
                 break;
@@ -388,6 +402,14 @@ function getStateProblems() {
         if (clients.has(port)) {
             problems.push(`port ${port} is connected and in timeout at the same time`);
         }
+        if (ports.findIndex(value => value === port) === null) {
+            problems.push(`port ${port} has a timeout, but not an associated number`);
+        }
+    }
+    for (let [port, code] of savedRejectCodes) {
+        if (ports.findIndex(value => value === port) === null) {
+            problems.push(`port ${port} has a know reject code, but not an associated number`);
+        }
     }
     return problems;
 }
@@ -402,6 +424,8 @@ const debugServer = new net_1.Server(socket => {
     message += itelexServer.listPorts().sort((a, b) => a - b).map(x => `  - ${(x + '').padStart(10)}`).join('\n');
     message += "\n\n=> port timeouts:\n";
     message += Array.from(portTimeouts).sort((a, b) => a[0] - b[0]).map(x => `  - ${(x[0] + '').padStart(10)}: time to timeout: ${timeLeft(x[1])} seconds`).join('\n');
+    message += "\n\n=> saved reject codes:\n";
+    message += Array.from(savedRejectCodes).sort((a, b) => a[0] - b[0]).map(x => `  - ${(x[0] + '').padStart(10)}: '${x[1]}'`).join('\n');
     message += "\n\n=> constants:";
     message += `\n  - AUTH_TIMEOUT: ${AUTH_TIMEOUT}`;
     message += `\n  - CALL_ACK_TIMEOUT: ${CALL_ACK_TIMEOUT}`;

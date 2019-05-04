@@ -30,7 +30,7 @@ type Number = number & NominalType<"Number">;
 let clients: Map<Port, Client> = new Map();
 let ports: Map<Number, Port> = new Map();
 let portTimeouts: Map<Port, NodeJS.Timer> = new Map();
-
+let savedRejectCodes: Map<Port, string> = new Map();
 
 
 
@@ -65,6 +65,7 @@ class Client {
     } = {};
     public peer: Client;
     public _id: string;
+    public number: Number = null;
 
     public centralexEnabled = false;
 
@@ -142,7 +143,7 @@ class Client {
         clearInterval(this.ping);
 
         if (this.peer) {
-            this.peer.send_reject('na');
+            this.peer.send_reject('der');
         }
 
         this.close();
@@ -154,9 +155,12 @@ class Client {
     }
 
     async onConnect(number: Number, pin: number) {
+
         clearTimeout(this.authTimeout);
 
         let port = ports.get(number);
+        savedRejectCodes.delete(port);
+
         if (port) {
             clearTimeout(portTimeouts.get(port));
             portTimeouts.delete(port);
@@ -183,7 +187,10 @@ class Client {
 
             clearTimeout(portTimeouts.get(port));
             portTimeouts.set(port, setTimeout(() => {
-                ports.delete(ports.findIndex((value, key) => value == port));
+                savedRejectCodes.delete(port)
+
+                const number = ports.findIndex(value => value === port);
+                ports.delete(number);
 
                 itelexServer.removePorts(port);
                 portTimeouts.delete(port);
@@ -196,6 +203,7 @@ class Client {
             this.authenticated = true;
 
             const oldId = this.id;
+            this.number = number;
             this._id = number.toString();
             this.idColor = '\x1b[33m';
             const newId = this.id;
@@ -359,7 +367,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
     if (!clients.has(port)) {
         // client is not connected
 
-        caller.send_reject('na');
+        caller.send_reject(savedRejectCodes.get(port) || 'nc');
         return;
     }
 
@@ -372,7 +380,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
     if (!called.available) {
         // if a client is not available
 
-        let errorMessage = 'na';
+        let errorMessage = 'nc';
         if (!called.authenticated) {
             errorMessage = 'na';
         } else if (called.occupied) {
@@ -429,6 +437,14 @@ const centralexServer = new Server(socket => {
                 client.close();
                 break;
             case PKG_REJECT:
+                if (client.authenticated) {
+                    const port = ports.get(client.number);
+                    if (port) {
+                        const code = content.readNullTermString();
+                        console.log("saving reject message '%s' for port %d", code, port);
+                        savedRejectCodes.set(port, code);
+                    }
+                }
                 client.close();
                 // console.log('client reject:', content.readNullTermString());
                 break;
@@ -524,6 +540,15 @@ function getStateProblems(): string[] {
         if (clients.has(port)) {
             problems.push(`port ${port} is connected and in timeout at the same time`);
         }
+        if (ports.findIndex(value => value === port) === null) {
+            problems.push(`port ${port} has a timeout, but not an associated number`);
+        }
+    }
+
+    for (let [port, code] of savedRejectCodes) {
+        if (ports.findIndex(value => value === port) === null) {
+            problems.push(`port ${port} has a know reject code, but not an associated number`);
+        }
     }
 
     return problems;
@@ -544,6 +569,9 @@ const debugServer = new Server(socket => {
 
     message += "\n\n=> port timeouts:\n";
     message += Array.from(portTimeouts).sort((a, b) => a[0] - b[0]).map(x => `  - ${(x[0] + '').padStart(10)}: time to timeout: ${timeLeft(x[1])} seconds`).join('\n');
+
+    message += "\n\n=> saved reject codes:\n";
+    message += Array.from(savedRejectCodes).sort((a, b) => a[0] - b[0]).map(x => `  - ${(x[0] + '').padStart(10)}: '${x[1]}'`).join('\n');
 
     message += "\n\n=> constants:";
     message += `\n  - AUTH_TIMEOUT: ${AUTH_TIMEOUT}`;
