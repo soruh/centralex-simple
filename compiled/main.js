@@ -195,7 +195,8 @@ class Client {
         // }
         try {
             if (end) {
-                this.socket.end(buffer);
+                this.socket.write(buffer);
+                this.socket.end();
             }
             else {
                 this.socket.write(buffer);
