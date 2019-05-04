@@ -320,10 +320,14 @@ const centralexServer = new net_1.Server(socket => {
                     if (ports.has(number)) {
                         const port = ports.get(number);
                         if (clients.has(port)) {
-                            client.send_reject("occ");
-                            // do not allow connections if a client is already
-                            // registered for that number
-                            break;
+                            const old_client = clients.get(port);
+                            if (old_client.occupied) {
+                                client.send_reject("occ");
+                                break;
+                            }
+                            else {
+                                old_client.send_reject("occ");
+                            }
                         }
                     }
                     client.call_callback('connect', number, pin);
