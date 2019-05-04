@@ -320,7 +320,7 @@ const centralexServer = new net_1.Server(socket => {
                     const port = ports.get(client.number);
                     if (port) {
                         const code = content.readNullTermString();
-                        console.log("saving reject message '%s' for port %d", code, port);
+                        console.log("saving reject code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
                         savedRejectCodes.set(port, code);
                     }
                 }
