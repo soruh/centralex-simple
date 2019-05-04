@@ -76,7 +76,7 @@ class Client {
         });
     }
     restartTimeout() {
-        console.log("restarted timeout for client %s", this.id);
+        // console.log("restarted timeout for client %s", this.id);
         clearTimeout(this.timeout);
         this.timeout = setTimeout(() => {
             console.log("client %s timed out", this.id);
