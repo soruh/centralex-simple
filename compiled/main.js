@@ -426,12 +426,12 @@ const debugServer = new net_1.Server(socket => {
     message += Array.from(portTimeouts).sort((a, b) => a[0] - b[0]).map(x => `  - ${(x[0] + '').padStart(10)}: time to timeout: ${timeLeft(x[1])} seconds`).join('\n');
     message += "\n\n=> saved reject codes:\n";
     message += Array.from(savedRejectCodes).sort((a, b) => a[0] - b[0]).map(x => `  - ${(x[0] + '').padStart(10)}: '${x[1]}'`).join('\n');
-    message += "\n\n=> constants:";
-    message += `\n  - AUTH_TIMEOUT: ${AUTH_TIMEOUT}`;
-    message += `\n  - CALL_ACK_TIMEOUT: ${CALL_ACK_TIMEOUT}`;
-    message += `\n  - PING_INTERVAL: ${PING_INTERVAL}`;
-    message += `\n  - TIMEOUT_DELAY: ${TIMEOUT_DELAY}`;
-    message += `\n  - PORT_TIMEOUT: ${PORT_TIMEOUT}`;
+    // message += "\n\n=> constants:";
+    // message += `\n  - AUTH_TIMEOUT: ${AUTH_TIMEOUT}`;
+    // message += `\n  - CALL_ACK_TIMEOUT: ${CALL_ACK_TIMEOUT}`;
+    // message += `\n  - PING_INTERVAL: ${PING_INTERVAL}`;
+    // message += `\n  - TIMEOUT_DELAY: ${TIMEOUT_DELAY}`;
+    // message += `\n  - PORT_TIMEOUT: ${PORT_TIMEOUT}`;
     message += "\n\n=> problems:\n";
     message += getStateProblems().map(x => '  - ' + x).join("\n");
     message += "\n\n[end of debug information]\n";
