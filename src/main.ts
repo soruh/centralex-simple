@@ -88,7 +88,7 @@ class Client {
     }
 
     close() {
-        this.socket.destroy();
+        this.socket.end();
 
         // let destroy = () => {
         //     destroy = () => { };
@@ -419,6 +419,15 @@ const centralexServer = new Server(socket => {
                     let number = content.readUInt32LE(0);
                     let pin = content.readUInt16LE(4);
 
+                    if (ports.has(number)) {
+                        const port = ports.get(number);
+                        if (clients.has(port)) {
+                            client.send_reject("occ");
+                            // do not allow connections if a client is already
+                            // registered for that number
+                            break;
+                        }
+                    }
                     client.call_callback('connect', number, pin);
                 }
                 break;
