@@ -558,7 +558,7 @@ function getStateProblems(): string[] {
 }
 
 const debugServer = new Server(socket => {
-    let message = "[start of debug information]";
+    let message = "";
 
     message += "\n=> port-number mapping:\n";
     message += Array.from(ports).sort((a, b) => a[1] - b[1]).map(x => `  - ${(x[0] + '').padStart(10)} on port: ${x[1]}`).join('\n');
@@ -587,7 +587,15 @@ const debugServer = new Server(socket => {
     message += "\n\n=> problems:\n";
     message += getStateProblems().map(x => '  - ' + x).join("\n");
 
-    message += "\n[end of debug information]\n"
+
+    let header = "";
+    header += `HTTP/1.0 200 OK\n`;
+    header += `Content-Type: text/plain\n`;
+    header += `Content-Length: ${Buffer.byteLength(message)}\n`;
+    header += `Date: ${new Date().toUTCString()}\n`;
+
+    socket.write(header);
+    socket.write("\n");
 
     socket.end(message);
 });
