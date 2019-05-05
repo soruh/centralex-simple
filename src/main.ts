@@ -437,14 +437,15 @@ const centralexServer = new Server(socket => {
 
         switch (type) {
             case PKG_END:
-                client.close();
-                break;
+            // fall through to PKG_REJECT case
+            // client.close();
+            // break;
             case PKG_REJECT:
                 if (client.authenticated) {
                     const port = ports.get(client.number);
                     if (port) {
                         const code = content.readNullTermString();
-                        console.log("saving reject code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
+                        console.log("saving exit code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
                         savedRejectCodes.set(port, code);
                     }
                 }
