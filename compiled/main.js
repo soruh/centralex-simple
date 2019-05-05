@@ -19,7 +19,7 @@ const AUTH_TIMEOUT = 30 * 1000;
 const CALL_ACK_TIMEOUT = 30 * 1000;
 const PING_INTERVAL = 15 * 1000;
 const TIMEOUT_DELAY = 35 * 1000;
-const PORT_TIMEOUT = 10 * 60 * 1000;
+const PORT_TIMEOUT = 60 * 60 * 1000;
 class NominalType {
 }
 let clients = new Map();
