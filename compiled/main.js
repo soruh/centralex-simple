@@ -254,7 +254,7 @@ const itelexServer = new multiPortServer_1.default(async (socket, port) => {
                 console.error("tried to write data to " + caller.id + " which is closed");
             }
             else {
-                console.error('itelex socket error:', error);
+                console.error('itelex socket error:', require('util').inspect(error));
             }
         });
     });
@@ -303,7 +303,7 @@ const centralexServer = new net_1.Server(socket => {
             console.error("tried to write data to " + client.id + " which is closed");
         }
         else {
-            console.error('centralex socket error:', error);
+            console.error('centralex socket error:', require('util').inspect(error));
         }
     });
     socket.on('close', () => {

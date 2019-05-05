@@ -357,7 +357,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
             } else if (error.code === "EPIPE") {
                 console.error("tried to write data to " + caller.id + " which is closed");
             } else {
-                console.error('itelex socket error:', error);
+                console.error('itelex socket error:', require('util').inspect(error));
             }
         });
     });
@@ -417,7 +417,7 @@ const centralexServer = new Server(socket => {
         } else if (error.code === "EPIPE") {
             console.error("tried to write data to " + client.id + " which is closed");
         } else {
-            console.error('centralex socket error:', error);
+            console.error('centralex socket error:', require('util').inspect(error));
         }
     });
 
