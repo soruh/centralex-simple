@@ -27,7 +27,11 @@ function log(...args: any[]) {
         .toISOString()
         .replace('T', ' ')
         .slice(0, -1);
-    process.stdout.write(timestamp + ': ')
+    if (typeof args[0] === "string") {
+        args[0] = timestamp + ': ' + args[0];
+    } else {
+        args.unshift(timestamp + ':');
+    }
     console.log(...args);
 }
 
