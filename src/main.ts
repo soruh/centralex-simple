@@ -5,6 +5,7 @@ import { dynIpUpdate } from "./ITelexServerCom";
 
 import "./prototypes/Buffer";
 import "./prototypes/Map";
+import { format } from "util";
 
 const PKG_END = 0x03;
 const PKG_REJECT = 0x04;
@@ -19,6 +20,16 @@ const PING_INTERVAL = 15 * 1000;
 const TIMEOUT_DELAY = 35 * 1000;
 const PORT_TIMEOUT = 60 * 60 * 1000
 
+
+
+function log(...args: any[]) {
+    const timestamp = new Date(Date.now() + new Date().getTimezoneOffset() * (-60 * 1000))
+        .toISOString()
+        .replace('T', ' ')
+        .slice(0, -1);
+    process.stdout.write(timestamp + ': ')
+    console.log(...args);
+}
 
 class NominalType<T extends string> {
     private as: T;
@@ -78,7 +89,7 @@ class Client {
     public idColor: string;
 
     get available() {
-        // console.log(this.id + ': ' + ((this.authenticated && !this.occupied) ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
+        // log(this.id + ': ' + ((this.authenticated && !this.occupied) ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
         return this.authenticated && !this.occupied;
     }
 
@@ -117,7 +128,7 @@ class Client {
         this.restartTimeout();
 
         this.authTimeout = setTimeout(() => {
-            console.log("client %s failed to authenticate itself in time", this.id);
+            log("client %s failed to authenticate itself in time", this.id);
             this.onTimeout();
         }, AUTH_TIMEOUT);
 
@@ -131,16 +142,16 @@ class Client {
     }
 
     restartTimeout() {
-        // console.log("restarted timeout for client %s", this.id);
+        // log("restarted timeout for client %s", this.id);
         clearTimeout(this.timeout);
         this.timeout = setTimeout(() => {
-            console.log("client %s timed out", this.id);
+            log("client %s timed out", this.id);
             this.onTimeout();
         }, TIMEOUT_DELAY);
     }
 
     onTimeout() {
-        console.log("client " + this.id + " timed out");
+        log("client " + this.id + " timed out");
         this.clearAllTimeouts();
         clearInterval(this.ping);
 
@@ -157,7 +168,7 @@ class Client {
     }
 
     async authenticate(number: Number, pin: number) {
-        console.log("client %s is trying to authenticate as \x1b[33m%d\x1b[0m", this.id, number);
+        log("client %s is trying to authenticate as \x1b[33m%d\x1b[0m", this.id, number);
 
         clearTimeout(this.authTimeout);
 
@@ -174,20 +185,20 @@ class Client {
         }
         if (!port) {
             this.socket.destroy();
-            console.log('\x1b[31mfailed to open free port\x1b[0m');
+            log('\x1b[31mfailed to open free port\x1b[0m');
             return;
         }
 
         ports.set(number, port);
 
 
-        console.log('\x1b[32madded\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
+        log('\x1b[32madded\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
         clients.set(port, this);
 
         this.socket.once('close', () => {
             if (this.noCloseHandle) return;
 
-            console.log('\x1b[31mremoved\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
+            log('\x1b[31mremoved\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
             clients.delete(port);
 
             clearTimeout(portTimeouts.get(port));
@@ -215,13 +226,13 @@ class Client {
             this.idColor = '\x1b[33m';
             const newId = this.id;
 
-            console.log("authenticated %s as %s", oldId, newId);
+            log("authenticated %s as %s", oldId, newId);
 
             this.send_centralex_confirm();
         } catch (err) {
             console.error('failed to update entry:', err);
 
-            console.log("\x1b[31mpurging\x1b[0m all information on client %s", this.id);
+            log("\x1b[31mpurging\x1b[0m all information on client %s", this.id);
 
             this.noCloseHandle = true; // don't call standart close handler
 
@@ -244,17 +255,17 @@ class Client {
 
 
     connect(client: Client) {
-        console.log('\x1b[1mconnecting\x1b[0m %s to %s', client.id, this.id);
+        log('\x1b[1mconnecting\x1b[0m %s to %s', client.id, this.id);
         if (!(client.available && this.available)) {
             console.error('\x1b[31mfailed to connect\x1b[0m');
 
-            // console.log(client.id + ': ' + (client.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
-            // console.log(client.id + ': ' + (client.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
-            // console.log(client.id + ': ' + (client.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
+            // log(client.id + ': ' + (client.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
+            // log(client.id + ': ' + (client.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
+            // log(client.id + ': ' + (client.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
 
-            // console.log(this.id + ': ' + (this.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
-            // console.log(this.id + ': ' + (this.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
-            // console.log(this.id + ': ' + (this.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
+            // log(this.id + ': ' + (this.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
+            // log(this.id + ': ' + (this.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
+            // log(this.id + ': ' + (this.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
             return false;
         }
 
@@ -278,12 +289,12 @@ class Client {
 
 
         this.socket.on('close', () => {
-            // console.log(this.id + " socket closed");
+            // log(this.id + " socket closed");
             client.close();
         });
 
         client.socket.on('close', () => {
-            // console.log(client.id + " socket closed");
+            // log(client.id + " socket closed");
             this.close();
         });
 
@@ -292,7 +303,7 @@ class Client {
 
     write(buffer: Buffer, end = false) {
         // if (!(buffer.length == 2 && buffer[0] == 0 && buffer[1] == 0)) {
-        //     console.log('sent to ' + this.id + ': ', buffer);
+        //     log('sent to ' + this.id + ': ', buffer);
         // }
 
         try {
@@ -361,7 +372,7 @@ class Client {
 
 const itelexServer = new MultiPortServer(async (socket, port: Port) => {
     const caller = new Client(socket, false);
-    console.log("new centralex caller '%s' from ip %s", caller.id, socket.remoteAddress);
+    log("new centralex caller '%s' from ip %s", caller.id, socket.remoteAddress);
 
     socket.on('error', error => {
         socket.on('error', (error: Error & { code: string }) => {
@@ -376,7 +387,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
     });
 
     socket.on('close', error => {
-        console.log('caller %s disconnected', caller.id);
+        log('caller %s disconnected', caller.id);
     });
 
 
@@ -422,7 +433,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
 
 const centralexServer = new Server(socket => {
     const client = new Client(socket, true);
-    console.log("new centralex client '%s' from ip %s", client.id, socket.remoteAddress);
+    log("new centralex client '%s' from ip %s", client.id, socket.remoteAddress);
 
     socket.on('error', (error: Error & { code: string }) => {
         if (error.code === "ECONNRESET") {
@@ -431,12 +442,12 @@ const centralexServer = new Server(socket => {
             console.error("tried to write data to " + client.id + " which is closed");
         } else {
             console.error('centralex socket error:', error);
-            console.log("error code: ", error.code);
+            log("error code: ", error.code);
         }
     });
 
     socket.on('close', () => {
-        console.log('centralex client %s disconnected', client.id);
+        log('centralex client %s disconnected', client.id);
     });
 
 
@@ -459,12 +470,12 @@ const centralexServer = new Server(socket => {
                     const port = ports.get(client.number);
                     if (port) {
                         const code = content.readNullTermString();
-                        console.log("saving exit code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
+                        log("saving exit code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
                         savedRejectCodes.set(port, code);
                     }
                 }
                 client.close();
-                // console.log('client reject:', content.readNullTermString());
+                // log('client reject:', content.readNullTermString());
                 break;
             case PKG_REM_CONNECT:
                 if (content.length >= 6) {
@@ -497,17 +508,17 @@ const centralexServer = new Server(socket => {
 
 /*
 itelexServer.on('listening', (port: number) => {
-    console.log('\x1b[32listening\x1b[0m on port: \x1b[36m%i\x1b[0m', port);
+    log('\x1b[32listening\x1b[0m on port: \x1b[36m%i\x1b[0m', port);
 });
 */
 
 itelexServer.on('close', (port: number) => {
-    console.log('\x1b[31mclosed\x1b[0m port: \x1b[36m%i\x1b[0m', port);
+    log('\x1b[31mclosed\x1b[0m port: \x1b[36m%i\x1b[0m', port);
 });
 
 
 centralexServer.listen(49491, () => {
-    console.log("centralex server listening on port %d", 49491);
+    log("centralex server listening on port %d", 49491);
 
 });
 
@@ -616,5 +627,5 @@ const debugServer = new Server(socket => {
 });
 
 debugServer.listen(4885, () => {
-    console.log("debug server listening on port %d", 4885);
+    log("debug server listening on port %d", 4885);
 });

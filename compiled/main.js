@@ -20,6 +20,14 @@ const CALL_ACK_TIMEOUT = 30 * 1000;
 const PING_INTERVAL = 15 * 1000;
 const TIMEOUT_DELAY = 35 * 1000;
 const PORT_TIMEOUT = 60 * 60 * 1000;
+function log(...args) {
+    const timestamp = new Date(Date.now() + new Date().getTimezoneOffset() * (-60 * 1000))
+        .toISOString()
+        .replace('T', ' ')
+        .slice(0, -1);
+    process.stdout.write(timestamp + ': ');
+    console.log(...args);
+}
 class NominalType {
 }
 let clients = new Map();
@@ -47,7 +55,7 @@ class Client {
         return this.idColor + this._id + '\x1b[0m';
     }
     get available() {
-        // console.log(this.id + ': ' + ((this.authenticated && !this.occupied) ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
+        // log(this.id + ': ' + ((this.authenticated && !this.occupied) ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
         return this.authenticated && !this.occupied;
     }
     close() {
@@ -68,7 +76,7 @@ class Client {
         });
         this.restartTimeout();
         this.authTimeout = setTimeout(() => {
-            console.log("client %s failed to authenticate itself in time", this.id);
+            log("client %s failed to authenticate itself in time", this.id);
             this.onTimeout();
         }, AUTH_TIMEOUT);
         this.ping = setInterval(() => {
@@ -79,15 +87,15 @@ class Client {
         });
     }
     restartTimeout() {
-        // console.log("restarted timeout for client %s", this.id);
+        // log("restarted timeout for client %s", this.id);
         clearTimeout(this.timeout);
         this.timeout = setTimeout(() => {
-            console.log("client %s timed out", this.id);
+            log("client %s timed out", this.id);
             this.onTimeout();
         }, TIMEOUT_DELAY);
     }
     onTimeout() {
-        console.log("client " + this.id + " timed out");
+        log("client " + this.id + " timed out");
         this.clearAllTimeouts();
         clearInterval(this.ping);
         if (this.peer) {
@@ -100,7 +108,7 @@ class Client {
         clearTimeout(this.authTimeout);
     }
     async authenticate(number, pin) {
-        console.log("client %s is trying to authenticate as \x1b[33m%d\x1b[0m", this.id, number);
+        log("client %s is trying to authenticate as \x1b[33m%d\x1b[0m", this.id, number);
         clearTimeout(this.authTimeout);
         let port = ports.get(number);
         savedRejectCodes.delete(port);
@@ -113,16 +121,16 @@ class Client {
         }
         if (!port) {
             this.socket.destroy();
-            console.log('\x1b[31mfailed to open free port\x1b[0m');
+            log('\x1b[31mfailed to open free port\x1b[0m');
             return;
         }
         ports.set(number, port);
-        console.log('\x1b[32madded\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
+        log('\x1b[32madded\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
         clients.set(port, this);
         this.socket.once('close', () => {
             if (this.noCloseHandle)
                 return;
-            console.log('\x1b[31mremoved\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
+            log('\x1b[31mremoved\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
             clients.delete(port);
             clearTimeout(portTimeouts.get(port));
             portTimeouts.set(port, setTimeout(() => {
@@ -141,12 +149,12 @@ class Client {
             this._id = number.toString();
             this.idColor = '\x1b[33m';
             const newId = this.id;
-            console.log("authenticated %s as %s", oldId, newId);
+            log("authenticated %s as %s", oldId, newId);
             this.send_centralex_confirm();
         }
         catch (err) {
             console.error('failed to update entry:', err);
-            console.log("\x1b[31mpurging\x1b[0m all information on client %s", this.id);
+            log("\x1b[31mpurging\x1b[0m all information on client %s", this.id);
             this.noCloseHandle = true; // don't call standart close handler
             // remove all client infomration on failed login
             clients.delete(port);
@@ -164,15 +172,15 @@ class Client {
         this.callbacks[callback] = null;
     }
     connect(client) {
-        console.log('\x1b[1mconnecting\x1b[0m %s to %s', client.id, this.id);
+        log('\x1b[1mconnecting\x1b[0m %s to %s', client.id, this.id);
         if (!(client.available && this.available)) {
             console.error('\x1b[31mfailed to connect\x1b[0m');
-            // console.log(client.id + ': ' + (client.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
-            // console.log(client.id + ': ' + (client.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
-            // console.log(client.id + ': ' + (client.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
-            // console.log(this.id + ': ' + (this.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
-            // console.log(this.id + ': ' + (this.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
-            // console.log(this.id + ': ' + (this.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
+            // log(client.id + ': ' + (client.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
+            // log(client.id + ': ' + (client.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
+            // log(client.id + ': ' + (client.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
+            // log(this.id + ': ' + (this.available ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m available');
+            // log(this.id + ': ' + (this.occupied ? '\x1b[31mis' : '\x1b[32mnot') + '\x1b[0m occupied');
+            // log(this.id + ': ' + (this.authenticated ? '\x1b[32mis' : '\x1b[31mnot') + '\x1b[0m authenticated');
             return false;
         }
         clearTimeout(client.timeout);
@@ -188,18 +196,18 @@ class Client {
         client.socket.pipe(this.socket);
         this.socket.pipe(client.socket);
         this.socket.on('close', () => {
-            // console.log(this.id + " socket closed");
+            // log(this.id + " socket closed");
             client.close();
         });
         client.socket.on('close', () => {
-            // console.log(client.id + " socket closed");
+            // log(client.id + " socket closed");
             this.close();
         });
         return true;
     }
     write(buffer, end = false) {
         // if (!(buffer.length == 2 && buffer[0] == 0 && buffer[1] == 0)) {
-        //     console.log('sent to ' + this.id + ': ', buffer);
+        //     log('sent to ' + this.id + ': ', buffer);
         // }
         try {
             if (end) {
@@ -252,7 +260,7 @@ class Client {
 }
 const itelexServer = new multiPortServer_1.default(async (socket, port) => {
     const caller = new Client(socket, false);
-    console.log("new centralex caller '%s' from ip %s", caller.id, socket.remoteAddress);
+    log("new centralex caller '%s' from ip %s", caller.id, socket.remoteAddress);
     socket.on('error', error => {
         socket.on('error', (error) => {
             if (error.code === "ECONNRESET") {
@@ -267,7 +275,7 @@ const itelexServer = new multiPortServer_1.default(async (socket, port) => {
         });
     });
     socket.on('close', error => {
-        console.log('caller %s disconnected', caller.id);
+        log('caller %s disconnected', caller.id);
     });
     if (!clients.has(port)) {
         // client is not connected
@@ -302,7 +310,7 @@ const itelexServer = new multiPortServer_1.default(async (socket, port) => {
 });
 const centralexServer = new net_1.Server(socket => {
     const client = new Client(socket, true);
-    console.log("new centralex client '%s' from ip %s", client.id, socket.remoteAddress);
+    log("new centralex client '%s' from ip %s", client.id, socket.remoteAddress);
     socket.on('error', (error) => {
         if (error.code === "ECONNRESET") {
             console.error("client " + client.id + " reset the socket");
@@ -312,11 +320,11 @@ const centralexServer = new net_1.Server(socket => {
         }
         else {
             console.error('centralex socket error:', error);
-            console.log("error code: ", error.code);
+            log("error code: ", error.code);
         }
     });
     socket.on('close', () => {
-        console.log('centralex client %s disconnected', client.id);
+        log('centralex client %s disconnected', client.id);
     });
     client.enableCentralex();
     const chunker = new ChunkPackages_1.default();
@@ -333,12 +341,12 @@ const centralexServer = new net_1.Server(socket => {
                     const port = ports.get(client.number);
                     if (port) {
                         const code = content.readNullTermString();
-                        console.log("saving exit code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
+                        log("saving exit code \x1b[32m'%s'\x1b[0m for port \x1b[36m%i\x1b[0m", code, port);
                         savedRejectCodes.set(port, code);
                     }
                 }
                 client.close();
-                // console.log('client reject:', content.readNullTermString());
+                // log('client reject:', content.readNullTermString());
                 break;
             case PKG_REM_CONNECT:
                 if (content.length >= 6) {
@@ -369,14 +377,14 @@ const centralexServer = new net_1.Server(socket => {
 });
 /*
 itelexServer.on('listening', (port: number) => {
-    console.log('\x1b[32listening\x1b[0m on port: \x1b[36m%i\x1b[0m', port);
+    log('\x1b[32listening\x1b[0m on port: \x1b[36m%i\x1b[0m', port);
 });
 */
 itelexServer.on('close', (port) => {
-    console.log('\x1b[31mclosed\x1b[0m port: \x1b[36m%i\x1b[0m', port);
+    log('\x1b[31mclosed\x1b[0m port: \x1b[36m%i\x1b[0m', port);
 });
 centralexServer.listen(49491, () => {
-    console.log("centralex server listening on port %d", 49491);
+    log("centralex server listening on port %d", 49491);
 });
 function timeLeft(timeout) {
     let remaining = timeout["_idleTimeout"] + timeout["_idleStart"] - Math.floor(process.uptime() * 1000);
@@ -457,5 +465,5 @@ const debugServer = new net_1.Server(socket => {
     socket.end(message);
 });
 debugServer.listen(4885, () => {
-    console.log("debug server listening on port %d", 4885);
+    log("debug server listening on port %d", 4885);
 });
