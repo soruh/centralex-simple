@@ -100,7 +100,7 @@ class Client {
         clearTimeout(this.authTimeout);
     }
     async authenticate(number, pin) {
-        console.log("client %s is trying to authenticate as \x1b[33m%d\x1b[0m with pin \x1b[33m%d\x1b[0m", this.id, number, pin);
+        console.log("client %s is trying to authenticate as \x1b[33m%d\x1b[0m", this.id, number);
         clearTimeout(this.authTimeout);
         let port = ports.get(number);
         savedRejectCodes.delete(port);
