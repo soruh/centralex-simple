@@ -157,6 +157,7 @@ class Client {
     }
 
     async authenticate(number: Number, pin: number) {
+        console.log("client %s is trying to authenticate as %d with pin %d", this.id, number, pin);
 
         clearTimeout(this.authTimeout);
 
