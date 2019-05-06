@@ -382,7 +382,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
         socket.on('error', (error: Error & { code: string }) => {
             if (error.code === "ECONNRESET") {
                 console.error("client " + caller.id + " reset the socket");
-            } else if (error.code === "EPIPE") {
+            } else if (error.code === "EPIPE" || error.code === "ERR_STREAM_WRITE_AFTER_END") {
                 console.error("tried to write data to " + caller.id + " which is closed");
             } else {
                 console.error('itelex socket error:', require('util').inspect(error));
@@ -442,7 +442,7 @@ const centralexServer = new Server(socket => {
     socket.on('error', (error: Error & { code: string }) => {
         if (error.code === "ECONNRESET") {
             console.error("client " + client.id + " reset the socket");
-        } else if (error.code === "EPIPE") {
+        } else if (error.code === "EPIPE" || error.code === "ERR_STREAM_WRITE_AFTER_END") {
             console.error("tried to write data to " + client.id + " which is closed");
         } else {
             console.error('centralex socket error:', error);

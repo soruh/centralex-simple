@@ -271,7 +271,7 @@ const itelexServer = new multiPortServer_1.default(async (socket, port) => {
             if (error.code === "ECONNRESET") {
                 console.error("client " + caller.id + " reset the socket");
             }
-            else if (error.code === "EPIPE") {
+            else if (error.code === "EPIPE" || error.code === "ERR_STREAM_WRITE_AFTER_END") {
                 console.error("tried to write data to " + caller.id + " which is closed");
             }
             else {
@@ -320,7 +320,7 @@ const centralexServer = new net_1.Server(socket => {
         if (error.code === "ECONNRESET") {
             console.error("client " + client.id + " reset the socket");
         }
-        else if (error.code === "EPIPE") {
+        else if (error.code === "EPIPE" || error.code === "ERR_STREAM_WRITE_AFTER_END") {
             console.error("tried to write data to " + client.id + " which is closed");
         }
         else {
