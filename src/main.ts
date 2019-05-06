@@ -360,7 +360,7 @@ class Client {
 
 const itelexServer = new MultiPortServer(async (socket, port: Port) => {
     const caller = new Client(socket, false);
-    console.log('new caller: %s', caller.id);
+    console.log("new centralex caller '%s' from ip %s", caller.id, socket.remoteAddress);
 
     socket.on('error', error => {
         socket.on('error', (error: Error & { code: string }) => {
@@ -421,7 +421,7 @@ const itelexServer = new MultiPortServer(async (socket, port: Port) => {
 
 const centralexServer = new Server(socket => {
     const client = new Client(socket, true);
-    console.log('new centralex client: ' + client.id);
+    console.log("new centralex client '%s' from ip %s", client.id, socket.remoteAddress);
 
     socket.on('error', (error: Error & { code: string }) => {
         if (error.code === "ECONNRESET") {
