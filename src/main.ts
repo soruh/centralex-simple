@@ -59,6 +59,8 @@ class Client {
     public timeout: NodeJS.Timer;
     public ping: NodeJS.Timer;
 
+    private noCloseHandle = false;
+
 
     public callbacks: {
         [index: string]: Function,
@@ -104,7 +106,7 @@ class Client {
     enableCentralex() {
         this.centralexEnabled = true;
 
-        this.callbacks.connect = this.onConnect;
+        this.callbacks.connect = this.authenticate;
 
         this.socket.on('close', () => {
             this.clearAllTimeouts();
@@ -154,7 +156,7 @@ class Client {
         clearTimeout(this.authTimeout);
     }
 
-    async onConnect(number: Number, pin: number) {
+    async authenticate(number: Number, pin: number) {
 
         clearTimeout(this.authTimeout);
 
@@ -182,6 +184,8 @@ class Client {
         clients.set(port, this);
 
         this.socket.once('close', () => {
+            if (this.noCloseHandle) return;
+
             console.log('\x1b[31mremoved\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
             clients.delete(port);
 
@@ -189,12 +193,14 @@ class Client {
             portTimeouts.set(port, setTimeout(() => {
                 savedRejectCodes.delete(port)
 
+
                 const number = ports.findIndex(value => value === port);
                 ports.delete(number);
 
                 itelexServer.removePorts(port);
                 portTimeouts.delete(port);
             }, PORT_TIMEOUT));
+
         });
 
 
@@ -212,13 +218,19 @@ class Client {
 
             this.send_centralex_confirm();
         } catch (err) {
+            console.error('failed to update entry:', err);
 
+            console.log("\x1b[31mpurging\x1b[0m all information on client %s", this.id);
+
+            this.noCloseHandle = true; // don't call standart close handler
+
+            // remove all client infomration on failed login
+            clients.delete(port);
             itelexServer.removePorts(port);
-            ports.delete(ports.findIndex((value, key) => value == port));
+            ports.delete(number);
             clearTimeout(portTimeouts.get(port));
             portTimeouts.delete(port);
 
-            console.error('failed to update entry:', err);
             this.send_reject('na');
         }
     }

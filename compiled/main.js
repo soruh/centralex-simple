@@ -35,6 +35,7 @@ function makePackageSkeleton(type, length = 0) {
 }
 class Client {
     constructor(socket, centralex) {
+        this.noCloseHandle = false;
         this.callbacks = {};
         this.number = null;
         this.centralexEnabled = false;
@@ -60,7 +61,7 @@ class Client {
     }
     enableCentralex() {
         this.centralexEnabled = true;
-        this.callbacks.connect = this.onConnect;
+        this.callbacks.connect = this.authenticate;
         this.socket.on('close', () => {
             this.clearAllTimeouts();
             clearInterval(this.ping);
@@ -98,7 +99,7 @@ class Client {
         clearTimeout(this.timeout);
         clearTimeout(this.authTimeout);
     }
-    async onConnect(number, pin) {
+    async authenticate(number, pin) {
         clearTimeout(this.authTimeout);
         let port = ports.get(number);
         savedRejectCodes.delete(port);
@@ -118,6 +119,8 @@ class Client {
         console.log('\x1b[32madded\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
         clients.set(port, this);
         this.socket.once('close', () => {
+            if (this.noCloseHandle)
+                return;
             console.log('\x1b[31mremoved\x1b[0m entry for client %s on port: \x1b[36m%i\x1b[0m', this.id, port);
             clients.delete(port);
             clearTimeout(portTimeouts.get(port));
@@ -141,11 +144,15 @@ class Client {
             this.send_centralex_confirm();
         }
         catch (err) {
+            console.error('failed to update entry:', err);
+            console.log("\x1b[31mpurging\x1b[0m all information on client %s", this.id);
+            this.noCloseHandle = true; // don't call standart close handler
+            // remove all client infomration on failed login
+            clients.delete(port);
             itelexServer.removePorts(port);
-            ports.delete(ports.findIndex((value, key) => value == port));
+            ports.delete(number);
             clearTimeout(portTimeouts.get(port));
             portTimeouts.delete(port);
-            console.error('failed to update entry:', err);
             this.send_reject('na');
         }
     }
