@@ -310,7 +310,8 @@ const centralexServer = new net_1.Server(socket => {
             console.error("tried to write data to " + client.id + " which is closed");
         }
         else {
-            console.error('centralex socket error:', require('util').inspect(error));
+            console.error('centralex socket error:', error);
+            console.log("error code: ", error.code);
         }
     });
     socket.on('close', () => {
