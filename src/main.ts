@@ -5,7 +5,6 @@ import { dynIpUpdate } from "./ITelexServerCom";
 
 import "./prototypes/Buffer";
 import "./prototypes/Map";
-import { format } from "util";
 
 const PKG_END = 0x03;
 const PKG_REJECT = 0x04;

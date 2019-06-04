@@ -10,12 +10,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-Buffer.prototype.readNullTermString =
-    function readNullTermString(encoding = "utf8", start = 0, end = this.length) {
-        let firstZero = this.indexOf(0, start);
-        let stop = firstZero >= start && firstZero <= end ? firstZero : end;
-        return this.toString(encoding, start, stop);
-    };
 const net = __importStar(require("net"));
 const ChunkPackages_1 = __importDefault(require("./ChunkPackages"));
 const config = {
