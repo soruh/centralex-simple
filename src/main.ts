@@ -1,10 +1,16 @@
 import "./prototypes/Buffer";
 import "./prototypes/Map";
+
 import itelexServer from "./itelexServer";
 import centralexServer from "./centralexServer";
 import debugServer from "./debugServer";
 import { log } from "./util";
 
+
+
+// itelexServer.on('listening', (port: number) => {
+//     log('new itelex server on port: \x1b[36m%i\x1b[0m', port);
+// });
 
 
 itelexServer.on('close', (port: number) => {
@@ -13,7 +19,6 @@ itelexServer.on('close', (port: number) => {
 
 centralexServer.listen(49491, () => {
     log("centralex server listening on port %d", 49491);
-
 });
 
 debugServer.listen(4885, () => {

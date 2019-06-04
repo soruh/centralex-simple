@@ -35,7 +35,7 @@ function makePackageSkeleton(type: number, length: number) {
 	return buffer;
 }
 
-function makeClientUpdatePackage(number: number, pin: number, port: number) {
+function makeClientUpdatePackage(number: CallNumber, pin: number, port: Port) {
 	let buffer = makePackageSkeleton(1, 8);
 
 	buffer.writeUIntLE(number, 2, 4);
@@ -45,7 +45,7 @@ function makeClientUpdatePackage(number: number, pin: number, port: number) {
 	return buffer;
 }
 
-function makePeerQueryPackage(number: number, version = 1) {
+function makePeerQueryPackage(number: CallNumber, version = 1) {
 	let buffer = makePackageSkeleton(3, 5);
 
 	buffer.writeUIntLE(number, 2, 4);
@@ -84,7 +84,7 @@ function parsePeerReply(buffer: Buffer): Peer {
 	return pkg;
 }
 
-function peerQuery(number: number): Promise<Peer> {
+function peerQuery(number: CallNumber): Promise<Peer> {
 	return new Promise((resolve, reject) => {
 		let socket = new net.Socket();
 		let chunker = new ChunkPackages();
@@ -118,7 +118,7 @@ function peerQuery(number: number): Promise<Peer> {
 	});
 }
 
-function dynIpUpdate(number: number, pin: number, port: number): Promise<string> {
+function dynIpUpdate(number: CallNumber, pin: number, port: Port): Promise<string> {
 	return new Promise((resolve, reject) => {
 
 		let socket = new net.Socket();
