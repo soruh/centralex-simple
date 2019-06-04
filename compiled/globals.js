@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+let clients = new Map();
+exports.clients = clients;
+let ports = new Map();
+exports.ports = ports;
+let portTimeouts = new Map();
+exports.portTimeouts = portTimeouts;
+let savedRejectCodes = new Map();
+exports.savedRejectCodes = savedRejectCodes;
